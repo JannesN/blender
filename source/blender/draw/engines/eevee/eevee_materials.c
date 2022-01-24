@@ -572,7 +572,7 @@ static EeveeMaterialCache material_opaque(EEVEE_Data *vedata,
         psl->depth_cull_ps,
         psl->depth_refract_ps,
         psl->depth_refract_cull_ps,
-        psl->invdepth_ps,
+        psl->invdepth_ps,//TODO Okay this is for sure wrong - these shaders do not need to be selected here and never will be - they should be active wenn ps or cull_ps are selected?!
         psl->invdepth_cull_ps,
     }[option];
     /* Hair are rendered inside the non-cull pass but needs to have a separate cache key. */
