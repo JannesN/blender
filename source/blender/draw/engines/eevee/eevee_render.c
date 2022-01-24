@@ -624,8 +624,28 @@ void EEVEE_render_draw(EEVEE_Data *vedata, RenderEngine *engine, RenderLayer *rl
     sldata->common_data.ray_depth = 0.0f;
     GPU_uniformbuf_update(sldata->common_ubo, &sldata->common_data);
 
-    GPU_framebuffer_bind(fbl->main_fb);
+
+    {
+      /* Inverse Depth for Thickness! */
+      if (fbl->mist_accum_fb != NULL) {
+        GPU_framebuffer_bind(fbl->main_fb);
+        GPU_framebuffer_clear_color_depth_stencil(fbl->main_fb, clear_col, 0.0f, clear_stencil);
+        DRW_draw_pass(psl->invdepth_ps);
+
+        GPU_framebuffer_bind(fbl->mist_accum_fb);
+        const float clear[4] = {0.0f, 0.0f, 0.0f, 0.0f};
+        GPU_framebuffer_clear_color(fbl->mist_accum_fb, clear);
+        DRW_draw_pass(psl->mist_accum_ps);
+
+        /* Restore */
+        GPU_framebuffer_bind(fbl->main_fb);
+      }
+
+    }
+
     GPU_framebuffer_clear_color_depth_stencil(fbl->main_fb, clear_col, clear_depth, clear_stencil);
+
+
     /* Depth prepass */
     DRW_draw_pass(psl->depth_ps);
     /* Create minmax texture */

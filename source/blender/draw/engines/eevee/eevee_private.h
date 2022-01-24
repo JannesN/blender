@@ -325,6 +325,13 @@ typedef struct EEVEE_PassList {
   struct DRWPass *depth_cull_ps;
   struct DRWPass *depth_clip_ps;
   struct DRWPass *depth_clip_cull_ps;
+
+  //Inverse depth pass pointers - clipping and culling required ?!
+  struct DRWPass *invdepth_ps;
+  struct DRWPass *invdepth_cull_ps;
+  struct DRWPass *invdepth_clip_ps;
+  struct DRWPass *invdepth_clip_cull_ps;
+
   struct DRWPass *depth_refract_ps;
   struct DRWPass *depth_refract_cull_ps;
   struct DRWPass *depth_refract_clip_ps;

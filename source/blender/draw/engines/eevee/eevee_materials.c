@@ -412,6 +412,11 @@ void EEVEE_materials_cache_init(EEVEE_ViewLayerData *sldata, EEVEE_Data *vedata)
   } while (0)
 
   {
+    //New inverse depth pass - not sure about the clip pass though!
+    DRWState state_invdepth = DRW_STATE_WRITE_DEPTH | DRW_STATE_DEPTH_GREATER_EQUAL;
+    EEVEE_PASS_CREATE(invdepth, state_invdepth);
+    EEVEE_CLIP_PASS_CREATE(invdepth, state_invdepth);
+
     DRWState state_depth = DRW_STATE_WRITE_DEPTH | DRW_STATE_DEPTH_LESS_EQUAL;
     DRWState state_shading = DRW_STATE_WRITE_COLOR | DRW_STATE_DEPTH_EQUAL | DRW_STATE_CLIP_PLANES;
     DRWState state_sss = DRW_STATE_WRITE_STENCIL | DRW_STATE_STENCIL_ALWAYS;
@@ -428,7 +433,8 @@ void EEVEE_materials_cache_init(EEVEE_ViewLayerData *sldata, EEVEE_Data *vedata)
   }
   {
     /* Renderpass accumulation. */
-    DRWState state = DRW_STATE_WRITE_COLOR | DRW_STATE_DEPTH_EQUAL | DRW_STATE_BLEND_ADD_FULL;
+    //DRWState state = DRW_STATE_WRITE_COLOR | DRW_STATE_DEPTH_EQUAL | DRW_STATE_BLEND_ADD_FULL;//Old Bad Way
+    DRWState state = DRW_STATE_WRITE_COLOR | DRW_STATE_DEPTH_EQUAL | DRW_STATE_BLEND_ALPHA;//New Better Way - at least for us we do not want diffuse to be accumulated :)
     /* Create an instance of each of these passes and link them together. */
     DRWPass *passes[] = {
         psl->material_ps,
@@ -566,6 +572,8 @@ static EeveeMaterialCache material_opaque(EEVEE_Data *vedata,
         psl->depth_cull_ps,
         psl->depth_refract_ps,
         psl->depth_refract_cull_ps,
+        psl->invdepth_ps,
+        psl->invdepth_cull_ps,
     }[option];
     /* Hair are rendered inside the non-cull pass but needs to have a separate cache key. */
     SET_FLAG_FROM_TEST(option, is_hair, KEY_HAIR);

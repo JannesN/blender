@@ -28,7 +28,7 @@ void main()
   /* falloff */
   mist = pow(mist, mistFalloff);
 
-  fragColor = vec4(mist);
+  fragColor = vec4(depth);//Just output depth from inverse depth 
 
   // if (mist > 0.999) fragColor = vec4(1.0);
   // else if (mist > 0.0001) fragColor = vec4(0.5);

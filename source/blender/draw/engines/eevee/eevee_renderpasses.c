@@ -315,7 +315,7 @@ void EEVEE_renderpasses_postprocess(EEVEE_ViewLayerData *UNUSED(sldata),
       break;
     }
     case EEVEE_RENDER_PASS_MIST: {
-      g_data->renderpass_postprocess = PASS_POST_ACCUMULATED_VALUE;
+      g_data->renderpass_postprocess = PASS_POST_DEPTH;
       g_data->renderpass_input = txl->mist_accum;
       break;
     }
