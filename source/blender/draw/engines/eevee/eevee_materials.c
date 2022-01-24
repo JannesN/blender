@@ -58,11 +58,13 @@ static struct {
 
 typedef struct EeveeMaterialCache {
   struct DRWShadingGroup *depth_grp;
+  struct DRWShadingGroup *invdepth_grp;
   struct DRWShadingGroup *shading_grp;
   struct DRWShadingGroup *shadow_grp;
   struct GPUMaterial *shading_gpumat;
   /* Meh, Used by hair to ensure draw order when calling DRW_shgroup_create_sub.
    * Pointers to ghash values. */
+  struct DRWShadingGroup **invdepth_grp_p;
   struct DRWShadingGroup **depth_grp_p;
   struct DRWShadingGroup **shading_grp_p;
   struct DRWShadingGroup **shadow_grp_p;
@@ -572,8 +574,13 @@ static EeveeMaterialCache material_opaque(EEVEE_Data *vedata,
         psl->depth_cull_ps,
         psl->depth_refract_ps,
         psl->depth_refract_cull_ps,
-        psl->invdepth_ps,//TODO Okay this is for sure wrong - these shaders do not need to be selected here and never will be - they should be active wenn ps or cull_ps are selected?!
+    }[option];
+
+    DRWPass *invdepth_ps = (DRWPass *[]){
+        psl->invdepth_ps,
         psl->invdepth_cull_ps,
+        NULL,
+        NULL,
     }[option];
     /* Hair are rendered inside the non-cull pass but needs to have a separate cache key. */
     SET_FLAG_FROM_TEST(option, is_hair, KEY_HAIR);
@@ -581,7 +588,7 @@ static EeveeMaterialCache material_opaque(EEVEE_Data *vedata,
     /* Search for the same shaders usage in the pass. */
     struct GPUShader *sh = GPU_material_get_shader(gpumat);
     void *cache_key = (char *)sh + option;
-    DRWShadingGroup *grp, **grp_p;
+    DRWShadingGroup *grp, **grp_p,*invgrp,**invgrp_p;
 
     if (BLI_ghash_ensure_p(pd->material_hash, cache_key, (void ***)&grp_p)) {
       /* This GPUShader has already been used by another material.
@@ -592,11 +599,28 @@ static EeveeMaterialCache material_opaque(EEVEE_Data *vedata,
       *grp_p = grp = DRW_shgroup_create(sh, depth_ps);
       EEVEE_material_bind_resources(grp, gpumat, sldata, vedata, NULL, NULL, false, false);
     }
-
     DRW_shgroup_add_material_resources(grp, gpumat);
 
     emc->depth_grp = grp;
     emc->depth_grp_p = grp_p;
+
+    //Add draw calls to render pass?! I guess?!
+    if (invdepth_ps != NULL) {
+      //cache_key = (char *)cache_key + 1337;//Do I need a different key?
+      if (BLI_ghash_ensure_p(pd->material_hash, cache_key, (void ***)&invgrp_p)) {
+        /* This GPUShader has already been used by another material.
+         * Add new shading group just after to avoid shader switching cost. */
+        invgrp = DRW_shgroup_create_sub(*invgrp_p);
+      }
+      else {
+        *invgrp_p = invgrp = DRW_shgroup_create(sh, invdepth_ps);
+        EEVEE_material_bind_resources(invgrp, gpumat, sldata, vedata, NULL, NULL, false, false);
+      }
+      DRW_shgroup_add_material_resources(invgrp, gpumat);
+      //Not sure I need those pointers?
+      emc->invdepth_grp = invgrp;
+      emc->invdepth_grp_p = invgrp_p;
+    }
   }
   {
     /* Shading Pass */

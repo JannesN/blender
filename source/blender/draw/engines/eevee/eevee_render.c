@@ -637,12 +637,11 @@ void EEVEE_render_draw(EEVEE_Data *vedata, RenderEngine *engine, RenderLayer *rl
         GPU_framebuffer_clear_color(fbl->mist_accum_fb, clear);
         DRW_draw_pass(psl->mist_accum_ps);
 
-        /* Restore */
-        GPU_framebuffer_bind(fbl->main_fb);
       }
 
     }
 
+    GPU_framebuffer_bind(fbl->main_fb);
     GPU_framebuffer_clear_color_depth_stencil(fbl->main_fb, clear_col, clear_depth, clear_stencil);
 
 
